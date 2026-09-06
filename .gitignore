@@ -1,0 +1,13 @@
+# Dados reais de clientes - nunca subir pro repositório público
+produtos-vonixx.json
+shopee-produtos.csv
+
+# Variáveis de ambiente / chaves de API
+.env
+
+# Dependências (caso adicione alguma no futuro)
+node_modules/
+
+# Arquivos do sistema operacional
+.DS_Store
+Thumbs.db

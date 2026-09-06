@@ -1,0 +1,38 @@
+[
+  {
+    "id": 1,
+    "nome_estoque": "SHAMPOO AUTOMOTIVO 500ML - EXEMPLO",
+    "nome_limpo": "Shampoo Automotivo Neutro",
+    "marca": "MarcaExemplo",
+    "volume": "500ml",
+    "funcao_confirmada": true,
+    "funcao": "Shampoo automotivo pH neutro para lavagem de carros, não agride ceras e vitrificações",
+    "estoque": 12,
+    "preco_custo": 8.50,
+    "preco_venda": 19.90
+  },
+  {
+    "id": 2,
+    "nome_estoque": "CERA DE CARNAUBA 200G - EXEMPLO",
+    "nome_limpo": "Cera de Carnaúba",
+    "marca": "MarcaExemplo",
+    "volume": "200g",
+    "funcao_confirmada": true,
+    "funcao": "Cera protetora de carnaúba para dar brilho e proteção à pintura automotiva",
+    "estoque": 5,
+    "preco_custo": 15.00,
+    "preco_venda": 32.90
+  },
+  {
+    "id": 3,
+    "nome_estoque": "PRODUTO MISTERIOSO 300ML - EXEMPLO",
+    "nome_limpo": "Produto Misterioso",
+    "marca": "MarcaExemplo",
+    "volume": "300ml",
+    "funcao_confirmada": false,
+    "funcao": "REVISAR: confirmar função exata com o fornecedor antes de publicar",
+    "estoque": 3,
+    "preco_custo": 10.00,
+    "preco_venda": 22.90
+  }
+]   

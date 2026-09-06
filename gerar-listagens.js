@@ -2,31 +2,7 @@
  * gerar-listagens.js
  *
  * Lê produtos-vonixx.json, gera título + descrição + categoria sugerida
- * pra cada produto usando a API GRATUITA do Gemini (Google AI Studio),
- * e exporta um CSV pronto pra subir no "Cadastro em Massa" (bulk upload)
- * da Central do Vendedor Shopee.
- *
- * Como pegar a chave grátis:
- *   1. Acesse https://aistudio.google.com/apikey (login com conta Google normal,
- *      não precisa do Gemini Pro pago nem cartão de crédito)
- *   2. Clique em "Create API Key"
- *   3. Copie a chave gerada
- *
- * Como usar:
- *   1. Node 18+ já tem fetch embutido, não precisa instalar nada
- *   2. export GEMINI_API_KEY="sua-chave-aqui"
- *   3. node gerar-listagens.js
- *
- * Saída: shopee-produtos.csv
- *
- * Reaproveitável: para gerar listagens de outros produtos (não-Vonixx),
- * só editar/duplicar o arquivo produtos-vonixx.json com o mesmo formato.
- *
- * Nota sobre o limite gratuito: o modelo usado aqui (gemini-2.5-flash) tem
- * cota diária grátis generosa (algumas centenas de requisições/dia), então
- * 18 produtos (ou mesmo o estoque todo) roda tranquilo sem gastar nada.
- * Se algum dia a cota estourar, a API só retorna erro 429 — nunca cobra
- * sem você ativar faturamento manualmente no Google Cloud.
+ * e exporta um CSV pronto para o "Cadastro em Massa" da Shopee.
  */
 
 const fs = require("fs");
@@ -34,34 +10,43 @@ const fs = require("fs");
 const API_KEY = process.env.GEMINI_API_KEY;
 if (!API_KEY) {
   console.error("Erro: defina a variável de ambiente GEMINI_API_KEY antes de rodar.");
-  console.error("Pegue sua chave grátis em: https://aistudio.google.com/apikey");
   process.exit(1);
 }
 
-const GEMINI_MODEL = "gemini-2.5-flash"; // modelo do tier gratuito
+// Retornando ao modelo validado pela sua chave no log anterior
+const GEMINI_MODEL = "gemini-3.6-flash"; 
 
 const INPUT_FILE = process.argv[2] || "produtos-vonixx.json";
 const OUTPUT_FILE = "shopee-produtos.csv";
+const REPORT_FILE = "relatorio-revisao.md";
 
-async function gerarConteudo(produto) {
-  const prompt = `Você é especialista em copywriting para e-commerce (Shopee) de produtos automotivos.
+// Helper para pausas limpas
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-Dados do produto:
+async function gerarConteudo(produto, tentativa = 1) {
+  const MAX_TENTATIVAS = 3;
+  const precoSeguro = Number(produto.preco_venda || 0).toFixed(2);
+  
+  const prompt = `Você é um especialista em copywriting para e-commerce (Shopee) focado em produtos automotivos.
+Crie os dados de listagem para o seguinte produto:
 - Nome: ${produto.nome_limpo}
 - Marca: ${produto.marca}
-- Volume: ${produto.volume || "não informado"}
+- Volume/Tamanho: ${produto.volume || "não informado"}
 - Função: ${produto.funcao}
-- Preço de venda: R$ ${produto.preco_venda.toFixed(2)}
+- Preço de venda: R$ ${precoSeguro}
 
-Gere no formato JSON puro (sem markdown, sem texto antes ou depois), com as chaves:
+Preencha o JSON de resposta seguindo exatamente esta estrutura e regras:
 {
-  "titulo": "título otimizado para busca na Shopee, até 60 caracteres, formato: Marca + Produto + Volume + Palavra-chave de busca",
-  "descricao": "descrição de venda com 3 a 5 linhas, destacando benefícios e modo de uso, tom direto e confiável, sem emojis em excesso (no máximo 2)",
-  "categoria_sugerida": "categoria da Shopee mais adequada (ex: Automotivo > Limpeza e Cuidados do Carro > ...)",
-  "tags_busca": ["até 5 palavras-chave relevantes para tags de busca"]
+  "titulo": "Título com até 60 caracteres (Marca + Produto + Volume + Palavra-chave)",
+  "descricao": "Descrição de venda persuasiva (3 a 5 linhas), destacando benefícios, modo de uso e gerando confiança. Máximo 2 emojis.",
+  "categoria_sugerida": "Categoria completa da Shopee (ex: Automotivo > Limpeza e Cuidados do Carro > Lavagem)",
+  "tags_busca": ["tag1", "tag2", "tag3", "tag4", "tag5"],
+  "peso_estimado_g": estimativa em gramas (apenas número inteiro),
+  "dimensoes_estimadas_cm": "estimativa (ex: 10x10x20)",
+  "sku_sugerido": "MARCA-NOME-VOLUME sem espaços"
 }
 
-Se a função do produto estiver marcada como "REVISAR", gere um texto genérico de produto de limpeza automotiva Vonixx e adicione no campo "descricao" o aviso: "[REVISAR FUNÇÃO ANTES DE PUBLICAR]" no início.`;
+Observação: Se a função contiver "REVISAR", inicie a descrição com "[REVISAR FUNÇÃO ANTES DE PUBLICAR]".`;
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${API_KEY}`;
 
@@ -70,23 +55,39 @@ Se a função do produto estiver marcada como "REVISAR", gere um texto genérico
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { maxOutputTokens: 800 },
+      generationConfig: { 
+        maxOutputTokens: 1500,
+        responseMimeType: "application/json"
+      },
     }),
   });
 
+  if ((response.status === 503 || response.status === 429) && tentativa < MAX_TENTATIVAS) {
+    console.log(`\n(Limite da API. Aguardando 15s para a tentativa ${tentativa + 1}...)`);
+    await sleep(30000);
+    return gerarConteudo(produto, tentativa + 1);
+  }
+
   if (!response.ok) {
     const errText = await response.text();
-    throw new Error(`Erro na API (produto: ${produto.nome_limpo}): ${errText}`);
+    throw new Error(`Erro na API (${produto.nome_limpo}): ${errText}`);
   }
 
   const data = await response.json();
-  const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-  const cleanText = rawText.replace(/```json|```/g, "").trim();
+  let rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+  
+  // Limpeza de segurança extra caso a IA envie formatação markdown ignorando o MIME Type
+  rawText = rawText.replace(/```(?:json)?|```/g, "").trim();
 
   try {
-    return JSON.parse(cleanText);
+    return JSON.parse(rawText);
   } catch (e) {
-    console.error(`Falha ao interpretar resposta pro produto "${produto.nome_limpo}":`, cleanText);
+    if (tentativa < MAX_TENTATIVAS) {
+      console.log(`\n(Falha no Parse. Aguardando 5s para refazer...)`);
+      await sleep(5000);
+      return gerarConteudo(produto, tentativa + 1);
+    }
+    console.error(`Falha irreparável ao interpretar produto "${produto.nome_limpo}":`, rawText);
     return {
       titulo: produto.nome_limpo,
       descricao: "[ERRO NA GERAÇÃO - revisar manualmente]",
@@ -104,18 +105,66 @@ function csvEscape(valor) {
   return str;
 }
 
+async function revisarLote(itensGerados, tentativa = 1) {
+  const MAX_TENTATIVAS = 3;
+  const resumo = itensGerados
+    .map(
+      (item, i) =>
+        `${i + 1}. ${item.nome_original} | título: "${item.titulo_shopee}" | categoria: "${item.categoria_sugerida}" | preço: R$${item.preco_venda} | peso: ${item.peso_estimado_g}g | precisa_revisar: ${item.precisa_revisar}`
+    )
+    .join("\n");
+
+  const prompt = `Você é um auditor de qualidade de e-commerce. Revise esta lista de produtos para a Shopee e aponte inconsistências (títulos genéricos, preços absurdos, pesos implausíveis).
+Lista:
+${resumo}
+
+Responda em Markdown com um bullet point por problema encontrado. Se tudo estiver perfeito, responda apenas: "Nenhuma inconsistência encontrada."`;
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${API_KEY}`;
+  
+  if (tentativa === 1) {
+      console.log("\nEsfriando a cota da API por 15s antes da revisão final...");
+      await sleep(15000);
+  }
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { maxOutputTokens: 1000 },
+    }),
+  });
+
+  if ((response.status === 503 || response.status === 429) && tentativa < MAX_TENTATIVAS) {
+    console.log(`\n(Revisão: cota excedida, esperando 15s...)`);
+    await sleep(15000);
+    return revisarLote(itensGerados, tentativa + 1);
+  }
+
+  if (!response.ok) {
+    return `Não foi possível gerar a revisão: ${await response.text()}`;
+  }
+  
+  const data = await response.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text || "Sem resposta do auditor.";
+}
+
 async function main() {
   const produtos = JSON.parse(fs.readFileSync(INPUT_FILE, "utf-8"));
-  console.log(`Gerando conteúdo para ${produtos.length} produtos...`);
+  console.log(`Iniciando geração para ${produtos.length} produtos...`);
 
   const linhas = [
-    "nome_original,titulo_shopee,descricao_shopee,categoria_sugerida,tags_busca,preco_venda,estoque,precisa_revisar",
+    "nome_original,titulo_shopee,descricao_shopee,categoria_sugerida,tags_busca,peso_estimado_g,dimensoes_estimadas_cm,sku_sugerido,preco_venda,estoque,precisa_revisar",
   ];
+  const itensGerados = [];
 
   for (const [i, produto] of produtos.entries()) {
     process.stdout.write(`  [${i + 1}/${produtos.length}] ${produto.nome_limpo}... `);
     try {
       const conteudo = await gerarConteudo(produto);
+      const precisaRevisar = produto.funcao_confirmada ? "não" : "SIM";
+      
       linhas.push(
         [
           csvEscape(produto.nome_estoque),
@@ -123,24 +172,48 @@ async function main() {
           csvEscape(conteudo.descricao),
           csvEscape(conteudo.categoria_sugerida),
           csvEscape((conteudo.tags_busca || []).join("; ")),
+          conteudo.peso_estimado_g ?? "",
+          csvEscape(conteudo.dimensoes_estimadas_cm),
+          csvEscape(conteudo.sku_sugerido),
           produto.preco_venda,
           produto.estoque,
-          produto.funcao_confirmada ? "não" : "SIM",
+          precisaRevisar,
         ].join(",")
       );
-      console.log("ok");
+      
+      itensGerados.push({
+        nome_original: produto.nome_estoque,
+        titulo_shopee: conteudo.titulo,
+        categoria_sugerida: conteudo.categoria_sugerida,
+        preco_venda: produto.preco_venda,
+        peso_estimado_g: conteudo.peso_estimado_g,
+        precisa_revisar: precisaRevisar,
+      });
+      console.log("OK");
     } catch (err) {
       console.log("ERRO:", err.message);
     }
-    // pequena pausa pra não estourar rate limit
-    await new Promise((r) => setTimeout(r, 300));
+    
+    // Trava de 5 segundos redondos
+    if (i < produtos.length - 1) {
+      await sleep(5000);
+    }
   }
 
   fs.writeFileSync(OUTPUT_FILE, linhas.join("\n"), "utf-8");
-  console.log(`\nPronto! Arquivo gerado: ${OUTPUT_FILE}`);
+  console.log(`\nCSV pronto para upload: ${OUTPUT_FILE}`);
+
+  console.log("Acionando consultor de IA para revisão do lote...");
+  const relatorio = await revisarLote(itensGerados);
+  fs.writeFileSync(
+    REPORT_FILE,
+    `# Relatório de Revisão - ${new Date().toLocaleString("pt-BR")}\n\n${relatorio}\n\n---\n*Lembrete: peso e dimensões são estimativas. Verifique antes de subir na Shopee.*`,
+    "utf-8"
+  );
+  console.log(`Relatório de anomalias salvo: ${REPORT_FILE}`);
 }
 
 main().catch((err) => {
-  console.error("Erro geral:", err);
+  console.error("Falha crítica na execução:", err);
   process.exit(1);
 });

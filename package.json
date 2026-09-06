@@ -1,0 +1,14 @@
+{
+  "name": "shopee-listing-generator",
+  "version": "1.0.0",
+  "description": "Gera títulos, descrições e categorias otimizados para anúncios de e-commerce (Shopee) usando a API gratuita do Gemini.",
+  "main": "gerar-listagens.js",
+  "scripts": {
+    "start": "node gerar-listagens.js"
+  },
+  "keywords": ["shopee", "e-commerce", "automation", "gemini-api", "nodejs"],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
