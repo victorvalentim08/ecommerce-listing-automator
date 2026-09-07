@@ -1,3 +1,4 @@
+require('dotenv').config();
 const fs = require("fs");
 
 const API_KEY = process.env.GEMINI_API_KEY;
