@@ -1,0 +1,62 @@
+[
+  {
+    "id": 14,
+    "nome_estoque": "SI02-PRO 500ML - VONIXX",
+    "nome_limpo": "SiO2-Pro",
+    "marca": "Vonixx",
+    "volume": "500ml",
+    "funcao_confirmada": true,
+    "funcao": "Selante de proteção com tecnologia de dióxido de silício (SiO2) para pintura automotiva",
+    "estoque": 8,
+    "preco_custo": 29.83,
+    "preco_venda": 47.9
+  },
+  {
+    "id": 15,
+    "nome_estoque": "STRIKE 500ML - VONIXX",
+    "nome_limpo": "Strike",
+    "marca": "Vonixx",
+    "volume": "500ml",
+    "funcao_confirmada": true,
+    "funcao": "Removedor de piche, asfalto, cola e adesivos da pintura automotiva",
+    "estoque": 1,
+    "preco_custo": 36.54,
+    "preco_venda": 59.9
+  },
+  {
+    "id": 16,
+    "nome_estoque": "V-PLASTIC PRO 50ML -VONIXX",
+    "nome_limpo": "V-Plastic Pro",
+    "marca": "Vonixx",
+    "volume": "50ml",
+    "funcao_confirmada": true,
+    "funcao": "Revitalizador de plásticos automotivos, proteção UV de longa duração",
+    "estoque": 2,
+    "preco_custo": 73.49,
+    "preco_venda": 127.9
+  },
+  {
+    "id": 17,
+    "nome_estoque": "V-eco fast 500ML - Vonixx",
+    "nome_limpo": "V-Eco Fast",
+    "marca": "Vonixx",
+    "volume": "500ml",
+    "funcao_confirmada": false,
+    "funcao": "REVISAR: confirmar função exata com o fornecedor/Vonixx antes de publicar",
+    "estoque": 1,
+    "preco_custo": 15.19,
+    "preco_venda": 24.9
+  },
+  {
+    "id": 18,
+    "nome_estoque": "VERTEX 500 ML VONIXX",
+    "nome_limpo": "Vertex",
+    "marca": "Vonixx",
+    "volume": "500ml",
+    "funcao_confirmada": false,
+    "funcao": "REVISAR: confirmar função exata com o fornecedor/Vonixx antes de publicar",
+    "estoque": 8,
+    "preco_custo": 12.14,
+    "preco_venda": 24.9
+  }
+]
