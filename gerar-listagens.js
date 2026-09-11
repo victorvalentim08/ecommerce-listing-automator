@@ -164,7 +164,7 @@ async function processarProduto(produto, itensGerados) {
   const conteudo = await gerarConteudo(produto);
   const precisaRevisar = produto.funcao_confirmada ? "não" : "SIM";
   
-  const custoFornecedor = parseFloat(produto.preco_venda); 
+  const custoFornecedor = parseFloat(produto.preco_custo); 
   const precoVendaCalculado = calcularPrecoVendaShopee(custoFornecedor, 0.25); 
   
   const linhaCSV = [

@@ -1,3 +1,11 @@
 # Relatório de Revisão
 
-Erro na revisão: {"error":{"message":"Rate limit exceeded: free-models-per-day. Add 10 credits to unlock 1000 free model requests per day","code":429,"metadata":{"headers":{"X-RateLimit-Limit":"50","X-RateLimit-Remaining":"0","X-RateLimit-Reset":"1788912000000"},"limit_source":"openrouter_free_tier_daily","remedy_hint":"Wait for the daily reset (see X-RateLimit-Reset), or purchase credits to raise your free-model daily limit.","provider_name":null}},"user_id":"user_3J0dnAvs6iWdkJZcS996zGhwjod"}
+| Produto | Tipo (SEO/Preço/Categoria) | Problema Encontrado | Solução Prática |
+| --- | --- | --- | --- |
+| ESCOVA DE SILICONE PARA REMOÇÃO DE PELOS - VONIXX | SEO | Título com excesso de palavras-chave (Pet, Estofados, Carro) configurando keyword stuffing | Ajustar título para "Vonixx Escova Silicone Remove Pelos 1un" mantendo padrão Marca+Linha+Função+Volume |
+| FITA AUTOMOTIVA 18MM X 50M-VONIXX | SEO | Título não inicia com a marca e não segue padrão "Marca + Linha + Função + Volume" | Reescrever para "Vonixx Fita Automotiva Mascaramento 18mm x 50m" |
+| FITA AUTOMOTIVA 18MM X 50M-VONIXX | Categoria | Categoria "Polimento e Enceramento" incompatível com fita de mascaramento (acessório) | Mover para "Automotivo > Limpeza e Cuidados do Carro > Acessórios de Polimento" ou similar |
+| HIGICOURO 500ML - VONIXX | Preço | Preço varejo R$34,89 inferior ao piso mínimo de R$35 para produtos premium Vonixx 500ml | Revisar precificação para ≥ R$35,00 |
+| LIMPA ESTOFADOS 5 L VONIXX | Preço | Galão 5L por R$56,36, muito abaixo do limite de R$100 indicando custo/atacado como varejo | Ajustar preço varejo para ≥ R$100,00 |
+| V-eco fast 500ML - Vonixx | Preço | Preço R$34,89 abaixo do piso de R$35 para produto premium 500ml | Revisar para ≥ R$35,00 |
+| VERTEX 500 ML VONIXX | Preço | Preço R$29,35 abaixo do piso de R$35 para produto premium 500ml | Revisar para ≥ R$35,00 |
