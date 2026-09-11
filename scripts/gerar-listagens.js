@@ -1,4 +1,6 @@
-require('dotenv').config();
+// Direciona o dotenv para procurar o arquivo na raiz do projeto (uma pasta acima de /scripts)
+const path = require("path");
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const fs = require("fs");
 const { calcularPrecoVendaShopee } = require("./calculadora");
 
@@ -10,16 +12,18 @@ if (!OPENROUTER_API_KEY) {
 
 const OPENROUTER_MODEL = "nvidia/nemotron-3-ultra-550b-a55b:free"; 
 
-const INPUT_FILE = process.argv[2] || "produtos-vonixx.json";
-const OUTPUT_FILE = "shopee-produtos.csv";
-const REPORT_FILE = "relatorio-revisao.md";
+// AJUSTE ESTRUTURAL: Redirecionando todas as leituras e saídas para a pasta 'data'
+const PASTA_DATA = path.join(__dirname, '../data');
+const INPUT_FILE = path.join(PASTA_DATA, process.argv[2] || "produtos-vonixx.json");
+const OUTPUT_FILE = path.join(PASTA_DATA, "shopee-produtos.csv");
+const REPORT_FILE = path.join(PASTA_DATA, "relatorio-revisao.md");
+const FALTANTES_FILE = path.join(PASTA_DATA, "produtos-faltantes.json");
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function gerarConteudo(produto, tentativa = 1) {
   const MAX_TENTATIVAS = 5;
   
-  // PROMPT CORRETO DO COPYWRITER PARA O PRODUTO INDIVIDUAL
   const prompt = `Você é um especialista em copywriting para e-commerce (Shopee) focado em produtos automotivos.
 Crie os dados de listagem para o seguinte produto:
 - Nome: ${produto.nome_limpo}
@@ -108,7 +112,6 @@ async function revisarLote(itensGerados, tentativa = 1) {
   const MAX_TENTATIVAS = 3;
   const resumo = itensGerados.map((item, i) => `${i + 1}. ${item.nome_original} | título: "${item.titulo_shopee}" | categoria: "${item.categoria_sugerida}" | preço base: R$${item.preco_venda}`).join("\n");
 
-  // PROMPT CORRETO DO AUDITOR NO LUGAR CERTO
   const prompt = `Você é o Coordenador Sênior de Operações da Shopee, especialista em Estética Automotiva.
 Missão: Auditar o lote de produtos Vonixx abaixo com rigor absoluto.
 
@@ -226,7 +229,7 @@ async function main() {
     }
     
     if (falhasFinais.length > 0) {
-      fs.writeFileSync("produtos-faltantes.json", JSON.stringify(falhasFinais, null, 2), "utf-8");
+      fs.writeFileSync(FALTANTES_FILE, JSON.stringify(falhasFinais, null, 2), "utf-8");
       console.log(`\n[AVISO] ${falhasFinais.length} produtos continuaram falhando. Eles foram salvos automaticamente em 'produtos-faltantes.json'.`);
     } else {
       console.log("\n[SUCESSO] Todos os produtos da repescagem foram salvos!");
