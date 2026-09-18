@@ -19,7 +19,10 @@
   },
   "dependencies": {
     "cors": "^2.8.6",
+    "csv-parser": "^3.2.1",
     "dotenv": "^17.4.2",
-    "express": "^5.2.1"
+    "exceljs": "^4.4.0",
+    "express": "^5.2.1",
+    "xlsx": "^0.18.5"
   }
 }

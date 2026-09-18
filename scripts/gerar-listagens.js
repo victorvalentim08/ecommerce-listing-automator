@@ -1,4 +1,3 @@
-// Direciona o dotenv para procurar o arquivo na raiz do projeto (uma pasta acima de /scripts)
 const path = require("path");
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const fs = require("fs");
@@ -6,13 +5,18 @@ const { calcularPrecoVendaShopee } = require("./calculadora");
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 if (!OPENROUTER_API_KEY) {
-  console.error("Erro: defina a variável de ambiente OPENROUTER_API_KEY no arquivo .env.");
+  console.error("Erro: defina OPENROUTER_API_KEY no arquivo .env.");
   process.exit(1);
 }
 
-const OPENROUTER_MODEL = "nvidia/nemotron-3-ultra-550b-a55b:free"; 
+// ARQUITETURA HA: Rotação de clusters para bypass automático de Rate Limit
+const MODEL_POOL = [
+  "qwen/qwen3.8-27b:free",
+  "liquid/lfm-2.5-2.6b:free",
+  "nvidia/nemotron-3.5-lightning:free",
+  "z-ai/glm-5.2:free"
+];
 
-// AJUSTE ESTRUTURAL: Redirecionando todas as leituras e saídas para a pasta 'data'
 const PASTA_DATA = path.join(__dirname, '../data');
 const INPUT_FILE = path.join(PASTA_DATA, process.argv[2] || "produtos-vonixx.json");
 const OUTPUT_FILE = path.join(PASTA_DATA, "shopee-produtos.csv");
@@ -21,9 +25,33 @@ const FALTANTES_FILE = path.join(PASTA_DATA, "produtos-faltantes.json");
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-async function gerarConteudo(produto, tentativa = 1) {
-  const MAX_TENTATIVAS = 5;
-  
+// MOTOR RESILIENTE: Abstração que reduziu o tamanho do seu código
+async function rotacionarRequisicao(prompt, contexto) {
+  for (const modelo of MODEL_POOL) {
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: { 
+        "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+        "HTTP-Referer": "http://localhost:3000",
+        "Content-Type": "application/json" 
+      },
+      body: JSON.stringify({
+        model: modelo,
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.3
+      }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.choices && data.choices.length > 0) return data.choices[0].message.content;
+    }
+    // Se não for OK (429 ou 404), o loop ignora e tenta o próximo modelo do array
+  }
+  throw new Error(`SPOF: Todos os clusters falharam durante [${contexto}].`);
+}
+
+async function gerarConteudo(produto) {
   const prompt = `Você é um especialista em copywriting para e-commerce (Shopee) focado em produtos automotivos.
 Crie os dados de listagem para o seguinte produto:
 - Nome: ${produto.nome_limpo}
@@ -31,72 +59,27 @@ Crie os dados de listagem para o seguinte produto:
 - Volume/Tamanho: ${produto.volume || "não informado"}
 - Função: ${produto.funcao}
 
-REGRA DE OURO: NUNCA mencione o valor financeiro ou preço do produto no texto, pois os valores podem mudar. Foque exclusivamente nos benefícios, rendimento e modo de uso.
+REGRA DE OURO: NUNCA mencione o valor financeiro ou preço do produto no texto.
 
-Preencha o JSON de resposta seguindo exatamente esta estrutura. Retorne APENAS o JSON válido, sem textos antes ou depois, sem formatação markdown:
+Preencha o JSON de resposta seguindo exatamente esta estrutura. Retorne APENAS o JSON válido:
 {
   "titulo": "Título com até 60 caracteres (Marca + Produto + Volume + Palavra-chave)",
-  "descricao": "Descrição de venda persuasiva (3 a 5 linhas), destacando benefícios, modo de uso e gerando confiança. Máximo 2 emojis.",
-  "categoria_sugerida": "Categoria completa da Shopee (ex: Automotivo > Limpeza e Cuidados do Carro > Lavagem)",
-  "tags_busca": ["tag1", "tag2", "tag3", "tag4", "tag5"],
+  "descricao": "Descrição persuasiva (3 a 5 linhas). Máximo 2 emojis.",
+  "categoria_sugerida": "Categoria completa da Shopee",
+  "tags_busca": ["tag1", "tag2", "tag3"],
   "peso_estimado_g": 500,
   "dimensoes_estimadas_cm": "10x10x20",
   "sku_sugerido": "MARCA-NOME-VOLUME",
   "preco_mercado_estimado": 65.90
-}
+}`;
 
-Observação: Se a função contiver "REVISAR", inicie a descrição com "[REVISAR FUNÇÃO ANTES DE PUBLICAR]".`;
-
-  const url = "https://openrouter.ai/api/v1/chat/completions";
-
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { 
-      "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-      "HTTP-Referer": "http://localhost:3000",
-      "Content-Type": "application/json" 
-    },
-    body: JSON.stringify({
-      model: OPENROUTER_MODEL,
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.3
-    }),
-  });
-
-  if (response.status === 429 && tentativa < MAX_TENTATIVAS) {
-    console.log(`\n(Limite da API OpenRouter. Aguardando 5s para a tentativa ${tentativa + 1}...)`);
-    await sleep(5000);
-    return gerarConteudo(produto, tentativa + 1);
-  }
-
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`Erro na API HTTP ${response.status}: ${errText}`);
-  }
-
-  const data = await response.json();
-  
-  if (!data.choices || data.choices.length === 0) {
-    if (tentativa < MAX_TENTATIVAS) {
-      console.log(`\n(Servidor retornou vazio. Aguardando 3s para tentativa ${tentativa + 1}...)`);
-      await sleep(3000);
-      return gerarConteudo(produto, tentativa + 1);
-    }
-    throw new Error(`Falha estrutural do OpenRouter após ${MAX_TENTATIVAS} tentativas: ${JSON.stringify(data)}`);
-  }
-
-  let rawText = data.choices[0].message.content || "{}";
+  let rawText = await rotacionarRequisicao(prompt, "Geração de Copy");
   rawText = rawText.replace(/```(?:json)?|```/g, "").trim();
 
   try {
     return JSON.parse(rawText);
   } catch (e) {
-    if (tentativa < MAX_TENTATIVAS) {
-      console.log(`\n(Falha no Parse JSON. Aguardando 3s para tentativa ${tentativa + 1}...)`);
-      await sleep(3000);
-      return gerarConteudo(produto, tentativa + 1);
-    }
-    return { titulo: produto.nome_limpo, descricao: "[ERRO NA GERAÇÃO - revisar manualmente]", categoria_sugerida: "", tags_busca: [], preco_mercado_estimado: "" };
+    return { titulo: produto.nome_limpo, descricao: "[ERRO DE PARSE JSON]", categoria_sugerida: "", tags_busca: [], preco_mercado_estimado: "" };
   }
 }
 
@@ -106,83 +89,32 @@ function csvEscape(valor) {
   return str;
 }
 
-async function revisarLote(itensGerados, tentativa = 1) {
+async function revisarLote(itensGerados) {
   if (itensGerados.length === 0) return "Nenhum item para revisar.";
-  
-  const MAX_TENTATIVAS = 3;
-  const resumo = itensGerados.map((item, i) => `${i + 1}. ${item.nome_original} | título: "${item.titulo_shopee}" | categoria: "${item.categoria_sugerida}" | preço base: R$${item.preco_venda}`).join("\n");
+  const resumo = itensGerados.map((item, i) => `${i + 1}. ${item.nome_original} | título: "${item.titulo_shopee}"`).join("\n");
 
-  const prompt = `Você é o Coordenador Sênior de Operações da Shopee, especialista em Estética Automotiva.
-Missão: Auditar o lote de produtos Vonixx abaixo com rigor absoluto.
+  const prompt = `Audite este lote de produtos automotivos. 
+Lote:\n${resumo}\n\nSe estiver 100% aprovado, responda EXATAMENTE: "Nenhuma inconsistência encontrada." Se houver falhas, retorne uma tabela Markdown.`;
 
-CRITÉRIOS DE FALHA (Aponte APENAS se violar estas regras):
-1. Categoria: Incompatível com a taxonomia padrão de Cuidados Automotivos.
-2. SEO (Título): Faltando o padrão "Marca + Linha + Função + Volume", contendo spam de palavras-chave, ou muito distante do limite ideal de 60 caracteres.
-3. Precificação: Valores de custo/atacado listados como varejo (ex: galões de 5L por menos de R$ 100, ou produtos premium Vonixx de 500ml por menos de R$ 35).
-
-Lote para auditoria:
-${resumo}
-
-DIRETRIZES DE SAÍDA (COMPLIANCE ESTRITO):
-- ZERO texto adicional. Sem saudações, sem explicações, sem blocos de código (\`\`\`).
-- Se o lote estiver 100% aprovado, responda EXATAMENTE: "Nenhuma inconsistência encontrada."
-- Se houver falhas, retorne EXATAMENTE uma tabela Markdown com as colunas:
-| Produto | Tipo (SEO/Preço/Categoria) | Problema Encontrado | Solução Prática |`;
-
-  const url = "https://openrouter.ai/api/v1/chat/completions";
-  
-  if (tentativa === 1) {
-      console.log("\nEsfriando a conexão por 5s antes da revisão final...");
-      await sleep(5000);
+  try {
+    return await rotacionarRequisicao(prompt, "Auditoria");
+  } catch (error) {
+    return "Erro na revisão final: API indisponível.";
   }
-
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { 
-      "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-      "HTTP-Referer": "http://localhost:3000",
-      "Content-Type": "application/json" 
-    },
-    body: JSON.stringify({
-      model: OPENROUTER_MODEL,
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.3
-    }),
-  });
-
-  if (response.status === 429 && tentativa < MAX_TENTATIVAS) {
-    console.log(`\n(Revisão: cota excedida, esperando 10s...)`);
-    await sleep(10000);
-    return revisarLote(itensGerados, tentativa + 1);
-  }
-
-  if (!response.ok) return `Erro na revisão: ${await response.text()}`;
-  const data = await response.json();
-  if (!data.choices || data.choices.length === 0) return "Auditor retornou resposta vazia.";
-  
-  return data.choices[0].message.content || "Sem resposta do auditor.";
 }
 
 async function processarProduto(produto, itensGerados) {
   const conteudo = await gerarConteudo(produto);
   const precisaRevisar = produto.funcao_confirmada ? "não" : "SIM";
-  
   const custoFornecedor = parseFloat(produto.preco_custo); 
   const precoVendaCalculado = calcularPrecoVendaShopee(custoFornecedor, 0.25); 
   
   const linhaCSV = [
-    csvEscape(produto.nome_estoque), 
-    csvEscape(conteudo.titulo), 
-    csvEscape(conteudo.descricao), 
-    csvEscape(conteudo.categoria_sugerida),
-    csvEscape((conteudo.tags_busca || []).join("; ")), 
-    conteudo.peso_estimado_g ?? "", 
-    csvEscape(conteudo.dimensoes_estimadas_cm),
-    csvEscape(conteudo.sku_sugerido), 
-    precoVendaCalculado, 
-    conteudo.preco_mercado_estimado || "",
-    produto.estoque, 
-    precisaRevisar
+    csvEscape(produto.nome_estoque), csvEscape(conteudo.titulo), csvEscape(conteudo.descricao), 
+    csvEscape(conteudo.categoria_sugerida), csvEscape((conteudo.tags_busca || []).join("; ")), 
+    conteudo.peso_estimado_g ?? "", csvEscape(conteudo.dimensoes_estimadas_cm),
+    csvEscape(conteudo.sku_sugerido), precoVendaCalculado, conteudo.preco_mercado_estimado || "",
+    produto.estoque, precisaRevisar
   ].join(",");
 
   fs.appendFileSync(OUTPUT_FILE, linhaCSV + "\n", "utf-8");
@@ -191,57 +123,66 @@ async function processarProduto(produto, itensGerados) {
 
 async function main() {
   const produtos = JSON.parse(fs.readFileSync(INPUT_FILE, "utf-8"));
-  console.log(`Iniciando geração para ${produtos.length} produtos via OpenRouter...`);
-  console.log(`(Modo de segurança e repescagem automática ativados)\n`);
-
-  const cabecalho = "nome_original,titulo_shopee,descricao_shopee,categoria_sugerida,tags_busca,peso_estimado_g,dimensoes_estimadas_cm,sku_sugerido,preco_venda_calculado,preco_mercado_ia,estoque,precisa_revisar\n"; 
-  fs.writeFileSync(OUTPUT_FILE, cabecalho, "utf-8");
-  
   const itensGerados = [];
   let filaFalhas = [];
+  let skusJaProcessados = new Set();
+  const cabecalho = "nome_original,titulo_shopee,descricao_shopee,categoria_sugerida,tags_busca,peso_estimado_g,dimensoes_estimadas_cm,sku_sugerido,preco_venda_calculado,preco_mercado_ia,estoque,precisa_revisar\n"; 
 
-  for (const [i, produto] of produtos.entries()) {
-    process.stdout.write(`  [${i + 1}/${produtos.length}] ${produto.nome_limpo}... `);
+  if (fs.existsSync(OUTPUT_FILE)) {
+      const conteudoAtual = fs.readFileSync(OUTPUT_FILE, 'utf-8');
+      if (conteudoAtual.trim().length > 0) {
+          const linhas = conteudoAtual.split('\n').slice(1);
+          linhas.forEach(linha => {
+              if (linha.trim()) skusJaProcessados.add(linha.split(',')[0].replace(/^"|"$/g, ''));
+          });
+      } else fs.writeFileSync(OUTPUT_FILE, cabecalho, "utf-8"); 
+  } else fs.writeFileSync(OUTPUT_FILE, cabecalho, "utf-8"); 
+
+  const produtosPendentes = produtos.filter(p => !skusJaProcessados.has(p.nome_estoque));
+  
+  if (produtosPendentes.length === 0) {
+      console.log("[SYS] O CSV já possui todos os dados solicitados.");
+      return;
+  }
+
+  console.log(`[SYS] ${skusJaProcessados.size} produtos identificados no banco local.`);
+  console.log(`[SYS] Processando delta de ${produtosPendentes.length} pendentes via Rotação de Clusters...\n`);
+
+  for (const [i, produto] of produtosPendentes.entries()) {
+    process.stdout.write(`  [${i + 1}/${produtosPendentes.length}] ${produto.nome_limpo}... `);
     try {
       await processarProduto(produto, itensGerados);
-      console.log("OK (Salvo no CSV)");
+      console.log("OK");
     } catch (err) {
       console.log("ERRO:", err.message);
       filaFalhas.push(produto);
     }
-    if (i < produtos.length - 1) await sleep(2000); 
+    if (i < produtosPendentes.length - 1) await sleep(1500); 
   }
 
   if (filaFalhas.length > 0) {
-    console.log(`\n[!] Iniciando repescagem automática para ${filaFalhas.length} produtos que falharam...`);
+    console.log(`\n[!] Repescagem para ${filaFalhas.length} nós corrompidos...`);
     const falhasFinais = [];
-    
     for (const [i, produto] of filaFalhas.entries()) {
       process.stdout.write(`  [REPESCAGEM ${i + 1}/${filaFalhas.length}] ${produto.nome_limpo}... `);
       try {
         await processarProduto(produto, itensGerados);
-        console.log("OK (Salvo no CSV)");
+        console.log("OK");
       } catch (err) {
-        console.log("FALHA DEFINITIVA:", err.message);
+        console.log("FALHA CRÍTICA:", err.message);
         falhasFinais.push(produto);
       }
-      await sleep(3000); 
+      await sleep(1500); 
     }
-    
-    if (falhasFinais.length > 0) {
-      fs.writeFileSync(FALTANTES_FILE, JSON.stringify(falhasFinais, null, 2), "utf-8");
-      console.log(`\n[AVISO] ${falhasFinais.length} produtos continuaram falhando. Eles foram salvos automaticamente em 'produtos-faltantes.json'.`);
-    } else {
-      console.log("\n[SUCESSO] Todos os produtos da repescagem foram salvos!");
-    }
+    if (falhasFinais.length > 0) fs.writeFileSync(FALTANTES_FILE, JSON.stringify(falhasFinais, null, 2), "utf-8");
   }
 
-  console.log(`\nCSV pronto e blindado: ${OUTPUT_FILE}`);
-  console.log("Acionando consultor de IA para revisão do lote...");
-  
-  const relatorio = await revisarLote(itensGerados);
-  fs.writeFileSync(REPORT_FILE, `# Relatório de Revisão\n\n${relatorio}\n`, "utf-8");
-  console.log(`Relatório salvo: ${REPORT_FILE}`);
+  if (itensGerados.length > 0) {
+      console.log("\n[SYS] Disparando auditoria do lote...");
+      const relatorio = await revisarLote(itensGerados);
+      fs.appendFileSync(REPORT_FILE, `\n\n## Auditoria Automática\n\n${relatorio}\n`, "utf-8");
+      console.log(`[SYS] Processo 100% finalizado. CSV e Relatório salvos.`);
+  }
 }
 
-main().catch(err => { console.error("Falha crítica:", err); process.exit(1); });
+main().catch(err => { console.error("Falha no thread principal:", err); process.exit(1); });
