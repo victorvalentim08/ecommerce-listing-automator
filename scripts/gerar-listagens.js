@@ -63,7 +63,7 @@ REGRA DE OURO: NUNCA mencione o valor financeiro ou preço do produto no texto.
 
 Preencha o JSON de resposta seguindo exatamente esta estrutura. Retorne APENAS o JSON válido:
 {
-  "titulo": "Título com até 60 caracteres (Marca + Produto + Volume + Palavra-chave)",
+  "titulo": "OBRIGATÓRIO iniciar com o Nome Original do produto, seguido da Marca, Função e Volume. Máximo 60 caracteres.",
   "descricao": "Descrição persuasiva (3 a 5 linhas). Máximo 2 emojis.",
   "categoria_sugerida": "Categoria completa da Shopee",
   "tags_busca": ["tag1", "tag2", "tag3"],
