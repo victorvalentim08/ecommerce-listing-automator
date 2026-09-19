@@ -46,14 +46,21 @@ async function main() {
     for (const p of produtos) {
         const dimensoes = p.dimensoes_estimadas_cm ? p.dimensoes_estimadas_cm.split('x') : ['10', '10', '10'];
 
+        // --- CÁLCULO DE PESO LOGÍSTICO (Grama para KG com Margem) ---
+        let pesoBaseGramas = parseInt(p.peso_estimado_g) || 500;
+        let pesoComEmbalagem = pesoBaseGramas + 150; // Adiciona 150g de caixa/bolha
+        let pesoFinalKG = pesoComEmbalagem / 1000;   // Converte para KG (Ex: 500g vira 0.65 kg)
+
         // Mapeamento pelas colunas exatas do Schema da Shopee
-        worksheet.getCell(`A${linhaAtual}`).value = ''; // Shopee exige ID Numérico. Deixando vazio, a plataforma auto-sugere pelo título. // Categoria
+        worksheet.getCell(`A${linhaAtual}`).value = ''; // Shopee exige ID Numérico. Deixando vazio, a plataforma auto-sugere pelo título.
         worksheet.getCell(`B${linhaAtual}`).value = p.titulo_shopee;      // Nome
         worksheet.getCell(`C${linhaAtual}`).value = p.descricao_shopee;   // Descrição
         worksheet.getCell(`D${linhaAtual}`).value = p.sku_sugerido;       // SKU Principal
         worksheet.getCell(`K${linhaAtual}`).value = parseFloat(p.preco_venda_calculado); // Preço
         worksheet.getCell(`L${linhaAtual}`).value = parseInt(p.estoque);  // Estoque
-        worksheet.getCell(`AA${linhaAtual}`).value = parseInt(p.peso_estimado_g); // Peso
+        
+        worksheet.getCell(`AA${linhaAtual}`).value = pesoFinalKG; // Peso Corrigido (em KG)
+        
         worksheet.getCell(`AB${linhaAtual}`).value = parseInt(dimensoes[0]); // Comprimento
         worksheet.getCell(`AC${linhaAtual}`).value = parseInt(dimensoes[1]); // Largura
         worksheet.getCell(`AD${linhaAtual}`).value = parseInt(dimensoes[2]); // Altura
