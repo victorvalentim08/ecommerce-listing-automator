@@ -20,4 +20,4 @@ RUN mkdir -p uploads data
 EXPOSE 3000
 
 # Comando para iniciar o servidor
-CMD ["node", "src/server.js"]
+CMD ["node", "server.js"]
