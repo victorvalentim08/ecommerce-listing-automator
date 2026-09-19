@@ -19,14 +19,26 @@ const MODEL_POOL = [
 ];
 
 const PASTA_DATA = path.join(__dirname, '../data');
-const INPUT_FILE = path.join(PASTA_DATA, process.argv[2] || "produtos-vonixx.json");
+
+// PREVENÇÃO DE BUGS 1: Garante que a pasta de destino existe antes de tentar salvar arquivos
+if (!fs.existsSync(PASTA_DATA)) {
+    fs.mkdirSync(PASTA_DATA, { recursive: true });
+}
+
+// PREVENÇÃO DE BUGS 2: Usa EXATAMENTE o caminho do arquivo recebido pelo backend
+const INPUT_FILE = process.argv[2]; 
+
+if (!INPUT_FILE) {
+    console.error("[ERRO] Nenhum arquivo de entrada fornecido.");
+    process.exit(1);
+}
+
 const OUTPUT_FILE = path.join(PASTA_DATA, "shopee-produtos.csv");
 const REPORT_FILE = path.join(PASTA_DATA, "relatorio-revisao.md");
 const FALTANTES_FILE = path.join(PASTA_DATA, "produtos-faltantes.json");
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// MOTOR RESILIENTE: Abstração que reduziu o tamanho do seu código
 async function rotacionarRequisicao(prompt, contexto) {
   for (const modelo of MODEL_POOL) {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -47,7 +59,6 @@ async function rotacionarRequisicao(prompt, contexto) {
       const data = await response.json();
       if (data.choices && data.choices.length > 0) return data.choices[0].message.content;
     }
-    // Se não for OK (429 ou 404), o loop ignora e tenta o próximo modelo do array
   }
   throw new Error(`SPOF: Todos os clusters falharam durante [${contexto}].`);
 }
@@ -103,7 +114,6 @@ DIRETRIZES DE ENGENHARIA DE VENDAS (Siga rigorosamente):
 
   let rawText = await rotacionarRequisicao(prompt, "Geração de Copy");
   
-  // Limpeza robusta caso a LLM insista em enviar formatação Markdown
   rawText = rawText.replace(/^```json\s*/i, "").replace(/^```\s*/, "").replace(/```$/s, "").trim();
 
   try {
@@ -162,25 +172,30 @@ async function processarProduto(produto, itensGerados) {
 }
 
 async function main() {
-  // 🚩 FEATURE FLAG DE SEGURANÇA (Mude para false quando for rodar o lote completo)
-  const MODO_TESTE = true; 
+  // 🚩 MODO DE TESTE (Mantido em TRUE para você validar 1 produto com segurança)
+  const MODO_TESTE = false; 
 
-  // O INPUT_FILE agora é o PDF que vem dinamicamente do Upload do React
   const produtos = await processarEstoquePDF(INPUT_FILE);
   const itensGerados = [];
   let filaFalhas = [];
   let skusJaProcessados = new Set();
   const cabecalho = "nome_original,titulo_shopee,descricao_shopee,categoria_sugerida,tags_busca,peso_estimado_g,dimensoes_estimadas_cm,sku_sugerido,preco_venda_calculado,preco_mercado_ia,estoque,precisa_revisar\n"; 
 
-  if (fs.existsSync(OUTPUT_FILE)) {
-      const conteudoAtual = fs.readFileSync(OUTPUT_FILE, 'utf-8');
-      if (conteudoAtual.trim().length > 0) {
-          const linhas = conteudoAtual.split('\n').slice(1);
-          linhas.forEach(linha => {
-              if (linha.trim()) skusJaProcessados.add(linha.split(',')[0].replace(/^"|"$/g, ''));
-          });
+  // Só checa itens processados se existirem produtos extraídos
+  if (produtos.length > 0) {
+      if (fs.existsSync(OUTPUT_FILE)) {
+          const conteudoAtual = fs.readFileSync(OUTPUT_FILE, 'utf-8');
+          if (conteudoAtual.trim().length > 0) {
+              const linhas = conteudoAtual.split('\n').slice(1);
+              linhas.forEach(linha => {
+                  if (linha.trim()) skusJaProcessados.add(linha.split(',')[0].replace(/^"|"$/g, ''));
+              });
+          } else fs.writeFileSync(OUTPUT_FILE, cabecalho, "utf-8"); 
       } else fs.writeFileSync(OUTPUT_FILE, cabecalho, "utf-8"); 
-  } else fs.writeFileSync(OUTPUT_FILE, cabecalho, "utf-8"); 
+  } else {
+      console.log("\n❌ [ERRO] O leitor de PDF não encontrou nenhum produto válido ou falhou ao ler o arquivo.");
+      return;
+  }
 
   let produtosPendentes = produtos.filter(p => !skusJaProcessados.has(p.nome_estoque));
   
@@ -189,7 +204,6 @@ async function main() {
       return;
   }
 
-  // 🛡️ TRAVA DE TESTE UNITÁRIO
   if (MODO_TESTE) {
       console.log("\n[QA] 🧪 MODO TESTE ATIVADO: Isolando apenas 1 produto para proteger a fila principal.");
       produtosPendentes = produtosPendentes.slice(0, 1);

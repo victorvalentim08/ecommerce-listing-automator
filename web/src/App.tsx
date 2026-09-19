@@ -4,6 +4,7 @@ export default function App() {
   const [arquivo, setArquivo] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
+  const [processoConcluido, setProcessoConcluido] = useState(false);
   const terminalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -15,6 +16,7 @@ export default function App() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setArquivo(e.target.files[0]);
+      setProcessoConcluido(false); // Reseta caso escolha outro ficheiro
     }
   };
 
@@ -22,6 +24,7 @@ export default function App() {
     if (!arquivo) return;
     
     setIsProcessing(true);
+    setProcessoConcluido(false);
     setLogs(['[SYS] Iniciando upload do ficheiro PDF...']);
 
     try {
@@ -50,6 +53,7 @@ export default function App() {
         if (payload.finalizado) {
           sse.close();
           setIsProcessing(false);
+          setProcessoConcluido(true);
           setLogs(prev => [...prev, `\n✅ Processo finalizado (Código ${payload.codigo}). Planilha Pronta!`]);
           return;
         }
@@ -172,10 +176,10 @@ export default function App() {
             </div>
           </div>
 
-          {/* Coluna Direita: Terminal */}
-          <div className="lg:col-span-8">
+          {/* Coluna Direita: Terminal e Alerta de Sucesso */}
+          <div className="lg:col-span-8 flex flex-col space-y-4">
             <div className="bg-slate-800 p-2 rounded-2xl shadow-xl border border-slate-700">
-              <div className="bg-[#0d1117] rounded-xl overflow-hidden flex flex-col h-[550px] border border-slate-900 shadow-inner">
+              <div className="bg-[#0d1117] rounded-xl overflow-hidden flex flex-col h-[460px] border border-slate-900 shadow-inner">
                 
                 {/* Header do Terminal */}
                 <div className="bg-[#161b22] px-4 py-3 flex items-center justify-between border-b border-gray-800/80">
@@ -223,6 +227,27 @@ export default function App() {
                 </div>
               </div>
             </div>
+
+            {/* Cartão de Conclusão e Download (Aparece automaticamente ao terminar) */}
+            {processoConcluido && (
+              <div className="p-5 bg-emerald-950/40 border border-emerald-500/30 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl animate-fade-in">
+                <div>
+                  <h3 className="text-emerald-400 font-bold text-base flex items-center gap-2">
+                    <span>🎉</span> Planilha Pronta para a Shopee!
+                  </h3>
+                  <p className="text-slate-300 text-xs mt-1">
+                    Os dados foram minerados e otimizados com sucesso pela IA.
+                  </p>
+                </div>
+                <a
+                  href="http://localhost:3000/api/download"
+                  className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm rounded-xl transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2 whitespace-nowrap cursor-pointer"
+                  download
+                >
+                  📥 Descarregar Planilha
+                </a>
+              </div>
+            )}
           </div>
           
         </div>

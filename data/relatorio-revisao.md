@@ -16,3 +16,20 @@ Nenhum item para revisar.
 | Item | Campo | Inconsistência | Sugestão |
 |---|---|---|---|
 | 1. EXTRACTUS 1,5L-VONIXX | Volume | O lote informa “1,5L”, enquanto o título utiliza “1.5L”, com separador decimal diferente. | Padronizar o título para “Extractus 1,5L Vonixx - ...”. |
+
+
+## Auditoria Automática
+
+Nenhuma inconsistência encontrada.
+
+
+## Auditoria Automática
+
+| Índice | Identificador (Coluna 1) | Título | Inconsistência |
+| :--- | :--- | :--- | :--- |
+| 1 | EstoqueP.costoCustototalP.vendaVendatotal | EstoqueP.costoTotal P.vendaVendatotal Vonixx - Cera Automotiva Brilho Rápido Proteção | O primeiro campo contém fórmulas financeiras (custo, venda) em vez de um identificador de produto ou modelo, divergindo do padrão dos demais 27 itens. |
+
+
+## Auditoria Automática
+
+Erro na revisão final: API indisponível.

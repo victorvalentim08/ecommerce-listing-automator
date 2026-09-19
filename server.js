@@ -8,6 +8,31 @@ const fs = require('fs');
 const app = express();
 app.use(cors());
 
+app.get('/api/download', (req, res) => {
+    const filePath = path.join(__dirname, 'data', 'Upload_Pronto_Para_Shopee.xlsx');
+    if (fs.existsSync(filePath)) {
+        res.download(filePath, 'Upload_Pronto_Para_Shopee.xlsx', (err) => {
+            if (err) console.error("[ERRO] Falha ao enviar o Excel:", err);
+        });
+    } else {
+        res.status(404).json({ erro: "Ficheiro Excel ainda não gerado." });
+    }
+});
+
+// Rota para download do CSV/Excel gerado
+app.get('/api/download', (req, res) => {
+    const filePath = path.join(__dirname, 'data', 'shopee-produtos.csv');
+    if (fs.existsSync(filePath)) {
+        res.download(filePath, 'shopee-produtos-otimizados.csv', (err) => {
+            if (err) {
+                console.error("[ERRO] Falha ao descarregar o ficheiro:", err);
+            }
+        });
+    } else {
+        res.status(404).json({ erro: "Ficheiro ainda não gerado. Execute o processamento primeiro." });
+    }
+});
+
 // Configura o Multer para salvar arquivos temporariamente na pasta 'uploads'
 const upload = multer({ dest: 'uploads/' });
 
