@@ -1,0 +1,226 @@
+[
+  {
+    "nome_estoque": "EXTRACTUS 1,5L - VONIXX",
+    "nome_limpo": "EXTRACTUS 1,5L - VONIXX",
+    "marca": "Vonixx",
+    "funcao": "Estética Automotiva",
+    "estoque": 12,
+    "preco_custo": 1.9
+  },
+  {
+    "nome_estoque": "Focus 240ML - Vonixx",
+    "nome_limpo": "Focus 240ML - Vonixx",
+    "marca": "Diversos",
+    "funcao": "Estética Automotiva",
+    "estoque": 62,
+    "preco_custo": 7.44
+  },
+  {
+    "nome_estoque": "HIDRACOURO 500ML - VONIXX",
+    "nome_limpo": "HIDRACOURO 500ML - VONIXX",
+    "marca": "Vonixx",
+    "funcao": "Estética Automotiva",
+    "estoque": 52,
+    "preco_custo": 3.73
+  },
+  {
+    "nome_estoque": "HIGICOURO 500ML - VONIXX",
+    "nome_limpo": "HIGICOURO 500ML - VONIXX",
+    "marca": "Vonixx",
+    "funcao": "Estética Automotiva",
+    "estoque": 11,
+    "preco_custo": 5.19
+  },
+  {
+    "nome_estoque": "INTENSE 1,5L - VONIXX",
+    "nome_limpo": "INTENSE 1,5L - VONIXX",
+    "marca": "Vonixx",
+    "funcao": "Estética Automotiva",
+    "estoque": 45,
+    "preco_custo": 1.17
+  },
+  {
+    "nome_estoque": "INTENSE 240ML - VONIXX",
+    "nome_limpo": "INTENSE 240ML - VONIXX",
+    "marca": "Vonixx",
+    "funcao": "Estética Automotiva",
+    "estoque": 91,
+    "preco_custo": 4.26
+  },
+  {
+    "nome_estoque": "IZER 500ML - VONIXX",
+    "nome_limpo": "IZER 500ML - VONIXX",
+    "marca": "Vonixx",
+    "funcao": "Estética Automotiva",
+    "estoque": 12,
+    "preco_custo": 2.98
+  },
+  {
+    "nome_estoque": "LIMPAESTOFADOS 5L VONIXX",
+    "nome_limpo": "LIMPAESTOFADOS 5L VONIXX",
+    "marca": "Vonixx",
+    "funcao": "Estética Automotiva",
+    "estoque": 32,
+    "preco_custo": 7
+  },
+  {
+    "nome_estoque": "PRIZM 1,5L",
+    "nome_limpo": "PRIZM 1,5L",
+    "marca": "Diversos",
+    "funcao": "Estética Automotiva",
+    "estoque": 14,
+    "preco_custo": 5.08
+  },
+  {
+    "nome_estoque": "PRIZM 500ML",
+    "nome_limpo": "PRIZM 500ML",
+    "marca": "Diversos",
+    "funcao": "Estética Automotiva",
+    "estoque": 102,
+    "preco_custo": 0.68
+  },
+  {
+    "nome_estoque": "PULVERIZADORFOAMPUMP 220ML - VONIXX",
+    "nome_limpo": "PULVERIZADORFOAMPUMP 220ML - VONIXX",
+    "marca": "Vonixx",
+    "funcao": "Estética Automotiva",
+    "estoque": 41,
+    "preco_custo": 0.18
+  },
+  {
+    "nome_estoque": "RESTAURAX 240ML - VONIXX",
+    "nome_limpo": "RESTAURAX 240ML - VONIXX",
+    "marca": "Vonixx",
+    "funcao": "Estética Automotiva",
+    "estoque": 92,
+    "preco_custo": 1.14
+  },
+  {
+    "nome_estoque": "REVELAX 500ML - VONIXX",
+    "nome_limpo": "REVELAX 500ML - VONIXX",
+    "marca": "Vonixx",
+    "funcao": "Estética Automotiva",
+    "estoque": 101,
+    "preco_custo": 8.23
+  },
+  {
+    "nome_estoque": "REVOX 500ML - VONIXX",
+    "nome_limpo": "REVOX 500ML - VONIXX",
+    "marca": "Vonixx",
+    "funcao": "Estética Automotiva",
+    "estoque": 42,
+    "preco_custo": 8.62
+  },
+  {
+    "nome_estoque": "SANITIZANTEFINALIZADOR 1,5L VONIXX",
+    "nome_limpo": "SANITIZANTEFINALIZADOR 1,5L VONIXX",
+    "marca": "Vonixx",
+    "funcao": "Estética Automotiva",
+    "estoque": 32,
+    "preco_custo": 4.16
+  },
+  {
+    "nome_estoque": "SANITIZANTEFRUTAL 5L",
+    "nome_limpo": "SANITIZANTEFRUTAL 5L",
+    "marca": "Diversos",
+    "funcao": "Estética Automotiva",
+    "estoque": 14,
+    "preco_custo": 2.02
+  },
+  {
+    "nome_estoque": "SANITIZIANTEBOMAR 5L",
+    "nome_limpo": "SANITIZIANTEBOMAR 5L",
+    "marca": "Diversos",
+    "funcao": "Estética Automotiva",
+    "estoque": 34,
+    "preco_custo": 2.02
+  },
+  {
+    "nome_estoque": "SHINY 500ML - Vonixx",
+    "nome_limpo": "SHINY 500ML - Vonixx",
+    "marca": "Diversos",
+    "funcao": "Estética Automotiva",
+    "estoque": 53,
+    "preco_custo": 9.59
+  },
+  {
+    "nome_estoque": "SI02 - PRO 500ML - VONIXX",
+    "nome_limpo": "SI02 - PRO 500ML - VONIXX",
+    "marca": "Vonixx",
+    "funcao": "Estética Automotiva",
+    "estoque": 82,
+    "preco_custo": 9.83
+  },
+  {
+    "nome_estoque": "SINTRA 500ML - VONIXX",
+    "nome_limpo": "SINTRA 500ML - VONIXX",
+    "marca": "Vonixx",
+    "funcao": "Estética Automotiva",
+    "estoque": 91,
+    "preco_custo": 7.62
+  },
+  {
+    "nome_estoque": "STRIKE 500ML - VONIXX",
+    "nome_limpo": "STRIKE 500ML - VONIXX",
+    "marca": "Vonixx",
+    "funcao": "Estética Automotiva",
+    "estoque": 13,
+    "preco_custo": 6.54
+  },
+  {
+    "nome_estoque": "Sanitizante Bom Ar 1,5L - Vintex",
+    "nome_limpo": "Sanitizante Bom Ar 1,5L - Vintex",
+    "marca": "Diversos",
+    "funcao": "Estética Automotiva",
+    "estoque": 31,
+    "preco_custo": 6.41
+  },
+  {
+    "nome_estoque": "Sintra Pro 1,5L - Vonixx",
+    "nome_limpo": "Sintra Pro 1,5L - Vonixx",
+    "marca": "Diversos",
+    "funcao": "Estética Automotiva",
+    "estoque": 52,
+    "preco_custo": 2.55
+  },
+  {
+    "nome_estoque": "TOKFINAL 500ML - VONIXX",
+    "nome_limpo": "TOKFINAL 500ML - VONIXX",
+    "marca": "Vonixx",
+    "funcao": "Estética Automotiva",
+    "estoque": 101,
+    "preco_custo": 7.63
+  },
+  {
+    "nome_estoque": "V - PLASTICPRO 50ML - VONIXX",
+    "nome_limpo": "V - PLASTICPRO 50ML - VONIXX",
+    "marca": "Vonixx",
+    "funcao": "Estética Automotiva",
+    "estoque": 27,
+    "preco_custo": 3.49
+  },
+  {
+    "nome_estoque": "V - ecofast 500ML - Vonixx",
+    "nome_limpo": "V - ecofast 500ML - Vonixx",
+    "marca": "Diversos",
+    "funcao": "Estética Automotiva",
+    "estoque": 11,
+    "preco_custo": 5.19
+  },
+  {
+    "nome_estoque": "VERTEX 500ML VONIXX",
+    "nome_limpo": "VERTEX 500ML VONIXX",
+    "marca": "Vonixx",
+    "funcao": "Estética Automotiva",
+    "estoque": 81,
+    "preco_custo": 2.14
+  },
+  {
+    "nome_estoque": "ZUCS 500ML ZACS",
+    "nome_limpo": "ZUCS 500ML ZACS",
+    "marca": "Diversos",
+    "funcao": "Estética Automotiva",
+    "estoque": 12,
+    "preco_custo": 2.74
+  }
+]

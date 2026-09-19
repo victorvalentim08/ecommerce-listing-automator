@@ -93,7 +93,7 @@ app.get('/api/stream-automacao', (req, res) => {
     });
 });
 
-const PORT = 3000;
-app.listen(PORT, () => {
-    console.log(`🚀 Motor de automação rodando em http://localhost:${PORT}`);
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Motor de automação rodando na porta ${PORT}`);
 });

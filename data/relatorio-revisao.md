@@ -33,3 +33,18 @@ Nenhuma inconsistência encontrada.
 ## Auditoria Automática
 
 Erro na revisão final: API indisponível.
+
+
+## Auditoria Automática
+
+Auditoria concluída localmente sem IA devido à instabilidade de rede.
+
+
+## Auditoria Automática
+
+Auditoria concluída localmente sem IA devido à instabilidade de rede.
+
+
+## Auditoria Automática
+
+Nenhum item para revisar.
