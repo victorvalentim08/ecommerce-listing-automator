@@ -1,23 +1,52 @@
 const express = require('express');
 const cors = require('cors');
+const multer = require('multer');
 const { spawn } = require('child_process');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 app.use(cors());
 
-// Trocamos para GET pois o EventSource (SSE) do navegador funciona via GET
+// Configura o Multer para salvar arquivos temporariamente na pasta 'uploads'
+const upload = multer({ dest: 'uploads/' });
+
+// ROTA 1: Recebe o arquivo do usuário (PDF, JSON ou Excel)
+app.post('/api/upload', upload.single('arquivo'), (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ sucesso: false, erro: 'Nenhum arquivo enviado.' });
+    }
+    
+    console.log(`[SYS] Arquivo recebido: ${req.file.originalname} -> Salvo como: ${req.file.filename}`);
+    
+    // Devolvemos o ID do arquivo para o React saber qual arquivo mandar processar
+    res.json({ 
+        sucesso: true, 
+        arquivoId: req.file.filename,
+        nomeOriginal: req.file.originalname
+    });
+});
+
+// ROTA 2: O Motor de IA (Streaming)
 app.get('/api/stream-automacao', (req, res) => {
-    // 1. Configura os cabeçalhos para manter a conexão aberta em streaming
+    const arquivoId = req.query.arquivoId;
+
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.flushHeaders(); 
 
-    const scriptPath = path.join(__dirname, 'scripts', 'gerar-listagens.js');
-    const processo = spawn('node', [scriptPath]);
+    if (!arquivoId) {
+        res.write(`data: ${JSON.stringify({ texto: '[ERRO] Nenhum arquivo informado para processamento.', erro: true })}\n\n`);
+        return res.end();
+    }
 
-    // 2. Sempre que o script "cuspir" algo no terminal, enviamos para o React
+    const caminhoArquivo = path.join(__dirname, 'uploads', arquivoId);
+    const scriptPath = path.join(__dirname, 'scripts', 'gerar-listagens.js');
+    
+    // Dispara o script passando o caminho exato do arquivo que o usuário fez upload
+    const processo = spawn('node', [scriptPath, caminhoArquivo]);
+
     processo.stdout.on('data', (data) => {
         res.write(`data: ${JSON.stringify({ texto: data.toString() })}\n\n`);
     });
@@ -26,9 +55,15 @@ app.get('/api/stream-automacao', (req, res) => {
         res.write(`data: ${JSON.stringify({ texto: data.toString(), erro: true })}\n\n`);
     });
 
-    // 3. Avisa o frontend quando o script terminar
     processo.on('close', (code) => {
         res.write(`data: ${JSON.stringify({ finalizado: true, codigo: code })}\n\n`);
+        
+        // Limpeza de Servidor: Apaga o arquivo temporário após o uso
+        if (fs.existsSync(caminhoArquivo)) {
+            fs.unlinkSync(caminhoArquivo);
+            console.log(`[SYS] Lixo limpo: Arquivo temporário ${arquivoId} deletado.`);
+        }
+        
         res.end();
     });
 });

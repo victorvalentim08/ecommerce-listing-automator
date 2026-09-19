@@ -2,6 +2,7 @@ const path = require("path");
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const fs = require("fs");
 const { calcularPrecoVendaShopee } = require("./calculadora");
+const { processarEstoquePDF } = require("./leitor-pdf");
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 if (!OPENROUTER_API_KEY) {
@@ -164,7 +165,8 @@ async function main() {
   // 🚩 FEATURE FLAG DE SEGURANÇA (Mude para false quando for rodar o lote completo)
   const MODO_TESTE = true; 
 
-  const produtos = JSON.parse(fs.readFileSync(INPUT_FILE, "utf-8"));
+  // O INPUT_FILE agora é o PDF que vem dinamicamente do Upload do React
+  const produtos = await processarEstoquePDF(INPUT_FILE);
   const itensGerados = [];
   let filaFalhas = [];
   let skusJaProcessados = new Set();
